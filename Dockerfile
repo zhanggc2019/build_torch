@@ -1,4 +1,4 @@
-ARG BASE_IMAGE
+ARG BASE_IMAGE=ubuntu:24.04
 
 FROM ${BASE_IMAGE}
 
@@ -29,11 +29,11 @@ RUN echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99al
 
 ARG PYTHON_VERSION
 
-# 配置 pip 使用清华源
+# 配置 pip 使用阿里云源
 RUN mkdir -p /root/.pip && \
     echo "[global]" > /root/.pip/pip.conf && \
-    echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> /root/.pip/pip.conf && \
-    echo "trusted-host = pypi.tuna.tsinghua.edu.cn" >> /root/.pip/pip.conf
+    echo "index-url = https://mirrors.aliyun.com/pypi/simple/" >> /root/.pip/pip.conf && \
+    echo "trusted-host = mirrors.aliyun.com" >> /root/.pip/pip.conf
 
 RUN cd /tmp && \
     wget --no-check-certificate https://mirrors.huaweicloud.com/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
@@ -47,38 +47,36 @@ RUN cd /tmp && \
     rm -rf /root/.cache/pip
 
 ARG PYTORCH_VERSION
-ARG PYTORCH_VERSION_SUFFIX
 ARG TORCHVISION_VERSION
-ARG TORCHVISION_VERSION_SUFFIX
 ARG TORCHAUDIO_VERSION
-ARG TORCHAUDIO_VERSION_SUFFIX
-ARG PYTORCH_DOWNLOAD_URL
+ARG PYTORCH_INDEX_URL
 
+# 先安装 PyTorch
 RUN if [ -z "$TORCHAUDIO_VERSION" ]; \
     then \
         TORCHAUDIO=""; \
     else \
-        TORCHAUDIO="torchaudio==${TORCHAUDIO_VERSION}${TORCHAUDIO_VERSION_SUFFIX}"; \
+        TORCHAUDIO="torchaudio==${TORCHAUDIO_VERSION}"; \
     fi && \
-    if [ -z "$PYTORCH_DOWNLOAD_URL" ]; \
+    if [ -z "$PYTORCH_INDEX_URL" ]; \
     then \
         pip install \
-            torch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX} \
-            torchvision==${TORCHVISION_VERSION}${TORCHVISION_VERSION_SUFFIX} \
+            torch==${PYTORCH_VERSION} \
+            torchvision==${TORCHVISION_VERSION} \
             ${TORCHAUDIO}; \
     else \
         pip install \
-            torch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX} \
-            torchvision==${TORCHVISION_VERSION}${TORCHVISION_VERSION_SUFFIX} \
+            torch==${PYTORCH_VERSION} \
+            torchvision==${TORCHVISION_VERSION} \
             ${TORCHAUDIO} \
-            -f ${PYTORCH_DOWNLOAD_URL}; \
+            --index-url ${PYTORCH_INDEX_URL}; \
     fi && \
-    rm -r /root/.cache/pip
+    rm -rf /root/.cache/pip
 
-# 复制并安装 requirements.txt 中的依赖
+# 复制并安装 requirements.txt 中的依赖 (在 PyTorch 之后安装)
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt && \
-    rm -r /root/.cache/pip
+    rm -rf /root/.cache/pip
 
 WORKDIR /workspace
