@@ -44,7 +44,7 @@ RUN cd /tmp && \
     cd .. && rm Python-${PYTHON_VERSION}.tgz && rm -r Python-${PYTHON_VERSION} && \
     ln -s /usr/local/bin/python3 /usr/local/bin/python && \
     ln -s /usr/local/bin/pip3 /usr/local/bin/pip && \
-    rm -r /root/.cache/pip
+    rm -rf /root/.cache/pip
 
 ARG PYTORCH_VERSION
 ARG PYTORCH_VERSION_SUFFIX
